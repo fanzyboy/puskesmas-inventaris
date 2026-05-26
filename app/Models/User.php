@@ -1,0 +1,26 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+
+class User extends Authenticatable
+{
+    use Notifiable;
+
+    protected $fillable = ['name', 'email', 'password', 'role_id', 'room_id'];
+    protected $hidden = ['password', 'remember_token'];
+
+    public function role() {
+        return $this->belongsTo(Role::class);
+    }
+
+    public function room() {
+        return $this->belongsTo(Room::class);
+    }
+
+    public function hasRole($role) {
+        return $this->role && $this->role->name === $role;
+    }
+}
