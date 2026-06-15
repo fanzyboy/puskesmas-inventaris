@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Borrowing;
 use App\Models\BorrowingDetail;
 use App\Models\Item;
+use App\Models\ItemLog;
 use App\Http\Requests\StoreBorrowingRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -58,6 +59,16 @@ class BorrowingController extends Controller
                 'item_id' => $item->id,
                 'qty' => $request->qty
             ]);
+
+            // Langsung kurangi stok saat pengajuan (Pending) agar tidak bisa dipinjam orang lain
+            $item->decrement('qty', $request->qty);
+
+            ItemLog::create([
+                'item_id' => $item->id,
+                'user_id' => Auth::id(),
+                'action' => 'Mengajukan Peminjaman (' . $request->qty . ' Unit)',
+                'new_values' => json_encode(['qty_borrowed' => $request->qty])
+            ]);
         });
 
         return redirect()->route('borrowings.index')->with('success', 'Permintaan Peminjaman Berhasil Dikirim.');
@@ -73,7 +84,7 @@ class BorrowingController extends Controller
             if ($status === 'Approved' && $borrowing->status === 'Pending') {
                 foreach ($borrowing->details as $detail) {
                     $srcItem = $detail->item;
-                    $srcItem->decrement('qty', $detail->qty);
+                    // Stok sudah dikurangi saat pengajuan, jadi tidak perlu dikurangi lagi di sini
 
                     $targetItem = Item::where('name', $srcItem->name)
                         ->where('room_id', $borrowing->to_room_id)
@@ -83,7 +94,7 @@ class BorrowingController extends Controller
                     if ($targetItem) {
                         $targetItem->increment('qty', $detail->qty);
                     } else {
-                        Item::create([
+                        $targetItem = Item::create([
                             'item_code' => 'INV-MUT-' . rand(1000,9999),
                             'name' => $srcItem->name,
                             'category' => $srcItem->category,
@@ -92,16 +103,48 @@ class BorrowingController extends Controller
                             'status' => 'Digunakan'
                         ]);
                     }
+
+                    ItemLog::create([
+                        'item_id' => $targetItem->id,
+                        'user_id' => Auth::id(),
+                        'action' => 'Menyetujui Peminjaman (' . $detail->qty . ' Unit)',
+                        'new_values' => json_encode(['status' => 'Approved'])
+                    ]);
                 }
             } 
+
+            if ($status === 'Rejected' && $borrowing->status === 'Pending') {
+                foreach ($borrowing->details as $detail) {
+                    // Kembalikan stok ke asal karena ditolak
+                    $detail->item->increment('qty', $detail->qty);
+                    
+                    ItemLog::create([
+                        'item_id' => $detail->item->id,
+                        'user_id' => Auth::id(),
+                        'action' => 'Menolak Peminjaman',
+                        'new_values' => json_encode(['status' => 'Rejected'])
+                    ]);
+                }
+            }
             
             if ($status === 'Returned' && $borrowing->status === 'Approved') {
                 foreach ($borrowing->details as $detail) {
                     // Balikkan stok ke asal
-                    Item::where('name', $detail->item->name)
+                    $originalItem = Item::where('name', $detail->item->name)
                         ->where('room_id', $borrowing->from_room_id)
                         ->where('status', 'Baik')
-                        ->increment('qty', $detail->qty);
+                        ->first();
+                        
+                    if ($originalItem) {
+                        $originalItem->increment('qty', $detail->qty);
+                        
+                        ItemLog::create([
+                            'item_id' => $originalItem->id,
+                            'user_id' => Auth::id(),
+                            'action' => 'Menerima Pengembalian (' . $detail->qty . ' Unit)',
+                            'new_values' => json_encode(['status' => 'Returned'])
+                        ]);
+                    }
 
                     // Kurangi stok di peminjam
                     $renterItem = Item::where('name', $detail->item->name)
@@ -110,7 +153,8 @@ class BorrowingController extends Controller
                         ->first();
                     
                     if ($renterItem) {
-                        $renterItem->decrement('qty', $detail->qty);
+                        // Hanya ubah status, tidak perlu mengurangi qty agar histori jumlah tetap terlihat
+                        $renterItem->update(['status' => 'Dikembalikan']);
                     }
                 }
                 $borrowing->return_date = now();

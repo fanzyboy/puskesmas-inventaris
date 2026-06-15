@@ -4,87 +4,145 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistem Inventaris Puskesmas</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style type="text/tailwindcss">
+        @theme {
+            --color-primary: #ff385c;
+            --color-primary-hover: #e00b41;
+            --color-ink: #222222;
+            --color-body: #3f3f3f;
+            --color-muted: #6a6a6a;
+            --color-hairline: #dddddd;
+            --color-surface-soft: #f7f7f7;
+            --font-sans: 'Inter', -apple-system, system-ui, Roboto, sans-serif;
+        }
+        
+        .airbnb-shadow {
+            box-shadow: rgba(0, 0, 0, 0.02) 0 0 0 1px, rgba(0, 0, 0, 0.04) 0 2px 6px 0, rgba(0, 0, 0, 0.1) 0 4px 8px 0;
+        }
+    </style>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans antialiased">
-    <div class="flex min-h-screen">
-        <aside class="w-64 bg-slate-900 text-white flex flex-col justify-between p-4 shadow-xl">
-            <div>
-                <div class="flex items-center gap-3 px-2 py-4 border-b border-slate-800 mb-6">
-                    <i class="fa-solid fa-hospital text-sky-400 text-2xl"></i>
-                    <span class="font-bold text-lg tracking-wider">Puskesmas-Ops</span>
-                </div>
-                <nav class="space-y-1">
-                    <a href="{{ route('dashboard') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition {{ request()->routeIs('dashboard') ? 'bg-sky-600 text-white font-semibold' : '' }}">
-                        <i class="fa-solid fa-chart-pie w-5"></i> Dashboard
-                    </a>
-                    @if(Auth::user()->hasRole('admin'))
-                    <a href="{{ route('rooms.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition {{ request()->routeIs('rooms.*') ? 'bg-sky-600 text-white font-semibold' : '' }}">
-                        <i class="fa-solid fa-door-open w-5"></i> Manajemen Ruangan
-                    </a>
-                    @endif
-                    <a href="{{ route('items.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition {{ request()->routeIs('items.*') ? 'bg-sky-600 text-white font-semibold' : '' }}">
-                        <i class="fa-solid fa-boxes-stacked w-5"></i> Inventaris Barang
-                    </a>
-                    <a href="{{ route('borrowings.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition {{ request()->routeIs('borrowings.*') ? 'bg-sky-600 text-white font-semibold' : '' }}">
-                        <i class="fa-solid fa-handshake w-5"></i> Peminjaman Barang
-                    </a>
-                    <a href="{{ route('reports.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition {{ request()->routeIs('reports.*') ? 'bg-sky-600 text-white font-semibold' : '' }}">
-                        <i class="fa-solid fa-file-invoice w-5"></i> Laporan Otomatis
-                    </a>
-                </nav>
-            </div>
-            <div class="border-t border-slate-800 pt-4">
-                <div class="flex items-center gap-3 px-2 py-2 mb-4 bg-slate-800/50 rounded-lg">
-                    <div class="w-9 h-9 rounded-full bg-sky-500 flex items-center justify-center text-sm font-bold text-white shadow">
-                        {{ strtoupper(substr(Auth::user()->name, 0, 2)) }}
-                    </div>
-                    <div class="min-w-0">
-                        <p class="text-sm font-semibold truncate">{{ Auth::user()->name }}</p>
-                        <p class="text-xs text-slate-400 capitalize">{{ Auth::user()->role->display_name }}</p>
-                    </div>
-                </div>
-                <form action="{{ route('logout') }}" method="POST">
-                    @csrf
-                    <button class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-400 hover:bg-red-950/30 rounded-lg transition font-medium">
-                        <i class="fa-solid fa-right-from-bracket"></i> Keluar Aplikasi
-                    </button>
-                </form>
-            </div>
-        </aside>
-
-        <div class="flex-1 flex flex-col min-w-0">
-            <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 shadow-sm">
-                <h2 class="text-lg font-bold text-slate-900">@yield('page_title')</h2>
-                <div class="flex items-center gap-2 text-sm text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg">
-                    <i class="fa-regular fa-calendar"></i>
-                    <span>{{ now()->translatedFormat('d F Y') }}</span>
-                </div>
-            </header>
-            <main class="p-8 flex-1 overflow-y-auto">
-                @if(session('success'))
-                <div class="mb-6 p-4 bg-emerald-50 border-l-4 border-emerald-500 text-emerald-800 rounded shadow-sm flex items-center gap-3">
-                    <i class="fa-solid fa-circle-check text-emerald-500 text-lg"></i>
-                    <p class="font-medium">{{ session('success') }}</p>
-                </div>
-                @endif
-                @if($errors->any())
-                <div class="mb-6 p-4 bg-rose-50 border-l-4 border-rose-500 text-rose-800 rounded shadow-sm">
-                    <div class="flex items-center gap-2 mb-1">
-                        <i class="fa-solid fa-circle-xmark text-rose-500"></i>
-                        <span class="font-bold">Gagal memproses data:</span>
-                    </div>
-                    <ul class="list-disc pl-5 text-sm space-y-1">
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-                @endif
-                @yield('content')
-            </main>
+<body class="bg-white text-ink font-sans antialiased flex flex-col min-h-screen">
+    <!-- Top Navigation -->
+    <header class="h-[80px] bg-white border-b border-hairline flex items-center justify-between px-6 lg:px-10 sticky top-0 z-40">
+        <!-- Logo -->
+        <div class="flex items-center gap-2">
+            <i class="fa-solid fa-hospital text-primary text-2xl"></i>
+            <span class="font-bold text-lg text-primary tracking-tight hidden md:block">Puskesmas<span class="font-normal text-ink">Ops</span></span>
         </div>
-    </div>
+
+        <!-- Center Tabs -->
+        <nav class="hidden md:flex gap-8">
+            <a href="{{ route('dashboard') }}" class="relative text-[16px] {{ request()->routeIs('dashboard') ? 'font-semibold text-ink' : 'font-medium text-muted hover:text-ink transition-colors' }}">
+                Dashboard
+                @if(request()->routeIs('dashboard'))
+                    <span class="absolute -bottom-[29px] left-0 right-0 h-[2px] bg-ink"></span>
+                @endif
+            </a>
+            <a href="{{ route('items.index') }}" class="relative text-[16px] {{ request()->routeIs('items.*') ? 'font-semibold text-ink' : 'font-medium text-muted hover:text-ink transition-colors' }}">
+                Inventaris
+                @if(request()->routeIs('items.*'))
+                    <span class="absolute -bottom-[29px] left-0 right-0 h-[2px] bg-ink"></span>
+                @endif
+            </a>
+            <a href="{{ route('borrowings.index') }}" class="relative text-[16px] {{ request()->routeIs('borrowings.*') ? 'font-semibold text-ink' : 'font-medium text-muted hover:text-ink transition-colors' }}">
+                Mutasi Aset
+                @if(request()->routeIs('borrowings.*'))
+                    <span class="absolute -bottom-[29px] left-0 right-0 h-[2px] bg-ink"></span>
+                @endif
+            </a>
+            <a href="{{ route('reports.index') }}" class="relative text-[16px] {{ request()->routeIs('reports.*') ? 'font-semibold text-ink' : 'font-medium text-muted hover:text-ink transition-colors' }}">
+                Laporan
+                @if(request()->routeIs('reports.*'))
+                    <span class="absolute -bottom-[29px] left-0 right-0 h-[2px] bg-ink"></span>
+                @endif
+            </a>
+            @if(Auth::user()->hasRole('admin'))
+            <a href="{{ route('rooms.index') }}" class="relative text-[16px] {{ request()->routeIs('rooms.*') ? 'font-semibold text-ink' : 'font-medium text-muted hover:text-ink transition-colors' }}">
+                Ruangan
+                @if(request()->routeIs('rooms.*'))
+                    <span class="absolute -bottom-[29px] left-0 right-0 h-[2px] bg-ink"></span>
+                @endif
+            </a>
+            @endif
+        </nav>
+
+        <!-- Right Utilities -->
+        <div class="flex items-center gap-4">
+            <div class="hidden lg:block text-sm font-medium text-ink px-4 py-2 hover:bg-surface-soft rounded-full transition cursor-default">
+                {{ now()->translatedFormat('d M Y') }}
+            </div>
+            
+            <div class="border border-hairline rounded-full flex items-center gap-3 p-1 pl-3 bg-white hover:airbnb-shadow transition-shadow cursor-pointer group">
+                <i class="fa-solid fa-bars text-ink text-sm"></i>
+                <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-xs font-bold text-white relative">
+                    {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+                    <!-- Dropdown Content (Normally JS handled, but we'll show on group-hover for simplicity) -->
+                    <div class="absolute right-0 top-10 w-48 bg-white border border-hairline rounded-xl airbnb-shadow hidden group-hover:block z-50 overflow-hidden">
+                        <div class="px-4 py-3 border-b border-hairline">
+                            <p class="font-semibold text-ink text-sm capitalize">{{ Auth::user()->name }}</p>
+                            <p class="text-xs text-muted mt-0.5 capitalize">{{ Auth::user()->role->display_name }}</p>
+                        </div>
+                        <form action="{{ route('logout') }}" method="POST" class="m-0">
+                            @csrf
+                            <button class="w-full text-left px-4 py-3 text-sm text-ink hover:bg-surface-soft transition">Log out</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Page Content -->
+    <main class="flex-1 max-w-[1280px] w-full mx-auto px-6 lg:px-10 py-10">
+        @if(session('success'))
+        <div class="mb-8 p-4 bg-surface-soft border border-hairline rounded-xl flex items-center gap-3 text-ink text-sm">
+            <i class="fa-solid fa-circle-check text-primary text-lg"></i>
+            <p class="font-medium">{{ session('success') }}</p>
+        </div>
+        @endif
+        
+        @if($errors->any())
+        <div class="mb-8 p-4 bg-rose-50 border border-rose-200 rounded-xl">
+            <div class="flex items-center gap-2 mb-2">
+                <i class="fa-solid fa-circle-exclamation text-primary"></i>
+                <span class="font-semibold text-ink text-sm">Harap periksa kembali isian Anda:</span>
+            </div>
+            <ul class="list-disc pl-5 text-sm text-body space-y-1">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+        @endif
+
+        <!-- Mobile Navigation (visible only on small screens) -->
+        <nav class="md:hidden flex gap-4 overflow-x-auto pb-4 mb-6 scrollbar-hide text-sm whitespace-nowrap">
+            <a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'font-bold text-ink' : 'text-muted' }}">Dashboard</a>
+            <a href="{{ route('items.index') }}" class="{{ request()->routeIs('items.*') ? 'font-bold text-ink' : 'text-muted' }}">Inventaris</a>
+            <a href="{{ route('borrowings.index') }}" class="{{ request()->routeIs('borrowings.*') ? 'font-bold text-ink' : 'text-muted' }}">Mutasi</a>
+            <a href="{{ route('reports.index') }}" class="{{ request()->routeIs('reports.*') ? 'font-bold text-ink' : 'text-muted' }}">Laporan</a>
+            @if(Auth::user()->hasRole('admin'))
+            <a href="{{ route('rooms.index') }}" class="{{ request()->routeIs('rooms.*') ? 'font-bold text-ink' : 'text-muted' }}">Ruangan</a>
+            @endif
+        </nav>
+
+        @yield('content')
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-hairline mt-auto bg-surface-soft px-6 lg:px-10 py-6">
+        <div class="max-w-[1280px] mx-auto flex flex-col md:flex-row justify-between items-center gap-4 text-[14px] text-muted">
+            <p>&copy; {{ date('Y') }} Sistem Inventaris Puskesmas. Terinspirasi oleh Airbnb.</p>
+            <div class="flex items-center gap-4">
+                <a href="#" class="hover:underline">Bantuan</a>
+                <a href="#" class="hover:underline">Privasi</a>
+            </div>
+        </div>
+    </footer>
 </body>
 </html>

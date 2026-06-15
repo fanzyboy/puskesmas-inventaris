@@ -20,7 +20,7 @@ class StoreItemRequest extends FormRequest
             'category' => 'required|string|in:Alat Medis,Elektronik,Mebel,Logistik',
             'room_id' => 'required|exists:rooms,id',
             'qty' => 'required|integer|min:0',
-            'status' => 'required|in:Baik,Rusak,Tidak Tersedia,Digunakan'
+            'status' => 'required|in:Baik,Rusak,Tidak Tersedia,Digunakan,Dikembalikan'
         ];
     }
 }

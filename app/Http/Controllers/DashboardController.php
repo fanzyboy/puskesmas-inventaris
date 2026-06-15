@@ -19,13 +19,13 @@ class DashboardController extends Controller
             $itemQuery->where('room_id', $user->room_id);
         }
 
-        $data['total_items'] = (clone $itemQuery)->sum('qty');
+        $data['total_items'] = (clone $itemQuery)->where('status', '!=', 'Dikembalikan')->sum('qty');
         $data['good_items'] = (clone $itemQuery)->where('status', 'Baik')->sum('qty');
         $data['damaged_items'] = (clone $itemQuery)->where('status', 'Rusak')->sum('qty');
         $data['used_items'] = (clone $itemQuery)->where('status', 'Digunakan')->sum('qty');
 
         $data['rooms_chart'] = Room::withCount(['items as total_qty' => function($q) {
-            $q->select(\DB::raw('sum(qty)'));
+            $q->where('status', '!=', 'Dikembalikan')->select(\DB::raw('sum(qty)'));
         }])->orderBy('total_qty', 'desc')->take(5)->get();
 
         $logQuery = ItemLog::with(['item', 'user'])->latest();
