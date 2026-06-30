@@ -22,9 +22,13 @@
                         </select>
                     </div>
                 @else
-                    <div class="h-full px-8 py-3 flex flex-col justify-center bg-surface-soft rounded-l-full">
+                    <div class="h-full px-8 py-3 flex flex-col justify-center hover:bg-surface-soft rounded-l-full transition cursor-pointer">
                         <label class="text-[12px] font-bold text-ink mb-0.5">Ruangan Anda</label>
-                        <input type="text" disabled value="{{ Auth::user()->room->name }}" class="w-full bg-transparent text-[14px] text-muted outline-none truncate">
+                        <select name="room_id" class="w-full bg-transparent text-[14px] text-muted outline-none appearance-none cursor-pointer">
+                            @foreach(Auth::user()->rooms as $room)
+                                <option value="{{ $room->id }}" {{ request('room_id', session('active_room_id', Auth::user()->room_id)) == $room->id ? 'selected' : '' }}>{{ $room->name }}</option>
+                            @endforeach
+                        </select>
                     </div>
                 @endif
             </div>

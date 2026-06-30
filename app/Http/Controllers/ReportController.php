@@ -13,8 +13,9 @@ class ReportController extends Controller
         $rooms = Room::all();
         $query = Item::with('room');
 
-        if (Auth::user()->hasRole('petugas')) {
-            $query->where('room_id', Auth::user()->room_id);
+        if (Auth::user()->hasRole('petugas') || Auth::user()->hasRole('Petugas Ruangan')) {
+            $selectedRoomId = $request->input('room_id') ?? session('active_room_id', Auth::user()->room_id);
+            $query->where('room_id', $selectedRoomId);
         } elseif ($request->filled('room_id')) {
             $query->where('room_id', $request->room_id);
         }
@@ -30,8 +31,9 @@ class ReportController extends Controller
     public function export(Request $request) {
         $query = Item::with('room');
 
-        if (Auth::user()->hasRole('petugas')) {
-            $query->where('room_id', Auth::user()->room_id);
+        if (Auth::user()->hasRole('petugas') || Auth::user()->hasRole('Petugas Ruangan')) {
+            $selectedRoomId = $request->input('room_id') ?? session('active_room_id', Auth::user()->room_id);
+            $query->where('room_id', $selectedRoomId);
         } elseif ($request->filled('room_id')) {
             $query->where('room_id', $request->room_id);
         }

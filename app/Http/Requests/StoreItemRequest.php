@@ -10,7 +10,7 @@ class StoreItemRequest extends FormRequest
     public function authorize(): bool
     {
         if (Auth::user()->hasRole('admin')) return true;
-        return Auth::user()->room_id == $this->room_id;
+        return Auth::user()->rooms->contains('id', $this->room_id) || Auth::user()->room_id == $this->room_id;
     }
 
     public function rules(): array

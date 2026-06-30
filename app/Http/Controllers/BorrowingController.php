@@ -18,8 +18,11 @@ class BorrowingController extends Controller
         
         $query = Borrowing::with(['requester', 'fromRoom', 'toRoom', 'details.item']);
         if ($user->hasRole('petugas')) {
-            $query->where('requester_id', $user->id)
-                  ->orWhere('from_room_id', $user->room_id);
+            $activeRoomId = session('active_room_id', $user->room_id);
+            $query->where(function($q) use ($activeRoomId) {
+                $q->where('from_room_id', $activeRoomId)
+                  ->orWhere('to_room_id', $activeRoomId);
+            });
         }
         $borrowings = $query->latest()->get();
         $allItems = Item::with('room')->where('status', 'Baik')->where('qty', '>', 0)->get();
@@ -29,13 +32,15 @@ class BorrowingController extends Controller
 
     public function store(StoreBorrowingRequest $request) {
         $user = Auth::user();
-        if (!$user->room_id) {
+        $activeRoomId = session('active_room_id', $user->room_id);
+        
+        if (!$activeRoomId) {
             return back()->withErrors(['msg' => 'Anda belum ditempatkan di ruangan mana pun.']);
         }
 
         $item = Item::findOrFail($request->item_id);
 
-        if ($item->room_id == $user->room_id) {
+        if ($item->room_id == $activeRoomId) {
             return back()->withErrors(['msg' => 'Tidak bisa meminjam barang dari ruangan sendiri.']);
         }
 
@@ -48,7 +53,7 @@ class BorrowingController extends Controller
                 'borrow_code' => 'REQ-' . time() . '-' . rand(10,99),
                 'requester_id' => $user->id,
                 'from_room_id' => $item->room_id,
-                'to_room_id' => $user->room_id,
+                'to_room_id' => $activeRoomId,
                 'borrow_date' => $request->borrow_date,
                 'status' => 'Pending',
                 'notes' => $request->notes

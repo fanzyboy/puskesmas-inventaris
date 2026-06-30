@@ -8,53 +8,45 @@ use Illuminate\Http\Request;
 
 class RoomController extends Controller
 {
-    public function index() {
-        $rooms = Room::with('pj')->get();
-        $users = User::where('role_id', 2)->get(); // Hanya ambil user petugas
+    public function index()
+    {
+        $rooms = Room::with('pj')->latest()->get();
+        // Mengambil semua user dengan role Petugas Ruangan untuk diplot ke dropdown form
+        $users = User::whereHas('role', function($q) {
+            $q->where('name', 'petugas');
+        })->get();
+
         return view('rooms.index', compact('rooms', 'users'));
     }
 
-    public function store(Request $request) {
+    public function store(Request $request)
+    {
         $validated = $request->validate([
-            'name' => 'required|string|unique:rooms,name',
-            'location_floor' => 'required|string',
-            'user_id' => 'nullable|exists:users,id'
+            'name' => 'required|string|max:255|unique:rooms,name',
+            'user_id' => 'nullable|exists:users,id',
+            'location_floor' => 'required'
         ]);
 
-        $room = Room::create($validated);
-        if ($request->filled('user_id')) {
-            User::where('id', $request->user_id)->update(['room_id' => $room->id]);
-        }
+        Room::create($validated);
 
-        return redirect()->route('rooms.index')->with('success', 'Ruangan berhasil ditambahkan.');
+        return redirect()->route('rooms.index')->with('success', 'Ruangan baru berhasil ditambahkan.');
     }
 
-    // --- PASTIKAN METHOD UPDATE INI SUDAH SESUAI ---
-    public function update(Request $request, Room $room) {
+    public function update(Request $request, Room $room)
+    {
         $validated = $request->validate([
-            'name' => 'required|string|unique:rooms,name,' . $room->id,
-            'location_floor' => 'required|string',
-            'user_id' => 'nullable|exists:users,id'
+            'name' => 'required|string|max:255|unique:rooms,name,' . $room->id,
+            'user_id' => 'nullable|exists:users,id',
+            'location_floor' => 'required'
         ]);
-
-        // Lepas ruangan dari PJ lama terlebih dahulu jika PJ diubah
-        if ($room->user_id && $room->user_id != $request->user_id) {
-            User::where('id', $room->user_id)->update(['room_id' => null]);
-        }
 
         $room->update($validated);
 
-        // Pasangkan ruangan ke user petugas yang baru ditunjuk
-        if ($request->filled('user_id')) {
-            User::where('id', $request->user_id)->update(['room_id' => $room->id]);
-        }
-
-        return redirect()->route('rooms.index')->with('success', 'Data tata ruang & Penanggung Jawab berhasil diperbarui.');
+        return redirect()->route('rooms.index')->with('success', 'Ruangan berhasil diperbarui.');
     }
 
-    public function destroy(Room $room) {
-        // Kosongkan room_id di user terkait sebelum dihapus agar tidak error foreign key
-        User::where('room_id', $room->id)->update(['room_id' => null]);
+    public function destroy(Room $room)
+    {
         $room->delete();
         return redirect()->route('rooms.index')->with('success', 'Ruangan berhasil dihapus.');
     }
